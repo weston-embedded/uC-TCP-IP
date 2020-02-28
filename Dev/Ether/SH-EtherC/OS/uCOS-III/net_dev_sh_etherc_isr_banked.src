@@ -1,0 +1,58 @@
+;********************************************************************************************************
+;                                              uC/TCP-IP
+;                                      The Embedded TCP/IP Suite
+;
+;                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+;
+;                                 SPDX-License-Identifier: APACHE-2.0
+;
+;               This software is subject to an open source license and is distributed by
+;                Silicon Laboratories Inc. pursuant to the terms of the Apache License,
+;                    Version 2.0 available at www.apache.org/licenses/LICENSE-2.0.
+;
+;********************************************************************************************************
+
+;********************************************************************************************************
+;
+;                                        NETWORK DEVICE DRIVER
+;
+;                                           Renesas SH-EtherC
+;
+; Filename : net_dev_sh_etherc_isr_banked.src
+; Version  : V3.06.00
+;*********************************************************************************************************
+; Note(s)  : (1) Assumes uC/TCP-IP V2.05 (or more recent version) is included in the project build.
+;********************************************************************************************************
+
+        .INCLUDE    "os_cpu_a.inc"         ; Include OS_CTX_SAVE and OS_CTX_RESTORE macros
+
+        .EXPORT _NetDev_ISR
+        .IMPORT _OSTCBCurPtr
+        .IMPORT _OSIntExit
+        .IMPORT _OSIntNestingCtr
+        .IMPORT _NetBSP_ENET_ISR_Handler
+
+_NetDev_ISR:
+
+        OS_CTX_SAVE_ISR                     ; Save register on the stack
+
+        mov.l   #_OSIntNestingCtr, r1       ; Set OSIntNestingCtr = IBNR.BN
+        MOVI20  #H'E080E, R3
+        MOV.W   @R3, R2
+        MOV.B   R2,  @R1
+
+        mov.l   #_NetBSP_ENET_ISR_Handler, r0
+        jsr     @r0
+        nop
+
+        mov.l    #_OSIntExit, r0
+        jsr     @r0                         ; call OSIntExit()
+        nop
+
+        OS_CTX_RESTORE_ISR                  ; Restore registers from stack
+    RESBANK
+
+        rte                                 ; return from interrupt
+        nop
+
+        .END

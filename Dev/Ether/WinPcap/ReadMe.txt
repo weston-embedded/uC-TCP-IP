@@ -1,0 +1,1 @@
+The "Lib" and "Include" folders need to be populated with the WinPcap library which can be found at winpcap.org.

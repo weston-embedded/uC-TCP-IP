@@ -1,0 +1,117 @@
+;********************************************************************************************************
+;                                              uC/TCP-IP
+;                                      The Embedded TCP/IP Suite
+;
+;                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+;
+;                                 SPDX-License-Identifier: APACHE-2.0
+;
+;               This software is subject to an open source license and is distributed by
+;                Silicon Laboratories Inc. pursuant to the terms of the Apache License,
+;                    Version 2.0 available at www.apache.org/licenses/LICENSE-2.0.
+;
+;********************************************************************************************************
+
+;********************************************************************************************************
+;
+;                                        NETWORK DEVICE DRIVER
+;
+;                                           Renesas SH-Ether
+;
+; Filename : net_dev_sh_etherc_isr.src
+; Version  : V3.06.00
+;*********************************************************************************************************
+; Note(s)  : (1) Assumes uC/TCP-IP V2.02 (or more recent version) is included in the project build.
+;********************************************************************************************************
+
+        .EXPORT _NetDev_ISR
+        .IMPORT _OSTCBCur
+        .IMPORT _OSIntExit
+        .IMPORT _OSIntNesting
+        .IMPORT _NetBSP_ENET_ISR_Handler
+
+_NetDev_ISR:
+        mov.l    r0, @-r15                  ; disable interrupts
+        stc      sr, r0
+        or      #240,r0
+        ldc      r0, sr
+        mov.l   @r15+, r0
+                                            ; Save processor registers on the stack
+
+        sts.l   macl, @-r15
+        sts.l   mach, @-r15
+        stc.l   gbr, @-r15
+        movml.l r15, @-r15                  ; push registers PR, R14, R13 ... R0
+        sts.l   fpul, @-r15
+        sts.l   fpscr, @-r15
+        fmov.s  fr15 ,@-r15
+        fmov.s  fr14 ,@-r15
+        fmov.s  fr13 ,@-r15
+        fmov.s  fr12 ,@-r15
+        fmov.s  fr11 ,@-r15
+        fmov.s  fr10 ,@-r15
+        fmov.s  fr9 ,@-r15
+        fmov.s  fr8 ,@-r15
+        fmov.s  fr7 ,@-r15
+        fmov.s  fr6 ,@-r15
+        fmov.s  fr5 ,@-r15
+        fmov.s  fr4 ,@-r15
+        fmov.s  fr3 ,@-r15
+        fmov.s  fr2 ,@-r15
+        fmov.s  fr1 ,@-r15
+        fmov.s  fr0 ,@-r15
+
+                                        ; clear compare match interupt
+
+        mov.l   #_OSIntNesting, r1      ; Increment OSIntNesting
+        mov.b   @r1, r0
+        extu.b  r0, r0
+        add     #1, r0
+        mov.b   r0, @r1                 ; If OSIntNesting == 1 save the current stack pointer
+        tst     #1, r0                  ; onto the current task's stack
+        bt      _NetDev_ISR1
+
+        mov.l   #_OSTCBCur, r1          ; Save current task's SP into its TCB
+        mov.l   @r1, r0
+        mov     r15, @r0
+
+_NetDev_ISR1:
+                                        ; clear timer interrupt source
+        mov.l   #_NetBSP_ENET_ISR_Handler, r3
+        jsr     @r3
+        nop
+
+        mov.l   #_OSIntExit, r0
+        jsr     @r0                     ; call OSIntExit()
+        nop
+
+                                        ; restore all processor registers from stack
+
+        fmov.s  @r15+, fr0
+        fmov.s  @r15+, fr1
+        fmov.s  @r15+, fr2
+        fmov.s  @r15+, fr3
+        fmov.s  @r15+, fr4
+        fmov.s  @r15+, fr5
+        fmov.s  @r15+, fr6
+        fmov.s  @r15+, fr7
+        fmov.s  @r15+, fr8
+        fmov.s  @r15+, fr9
+        fmov.s  @r15+, fr10
+        fmov.s  @r15+, fr11
+        fmov.s  @r15+, fr12
+        fmov.s  @r15+, fr13
+        fmov.s  @r15+, fr14
+        fmov.s  @r15+, fr15
+        lds.l   @r15+, fpscr
+        lds.l   @r15+, fpul
+        movml.l @r15+, r15                  ; restores PR, R0, R1 ... R14
+        ldc.l   @r15+, gbr
+        lds.l   @r15+, mach
+        lds.l   @r15+, macl
+
+        rte
+        nop
+
+        .END
+
