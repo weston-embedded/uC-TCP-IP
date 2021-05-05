@@ -1732,7 +1732,8 @@ static  void  NetCache_AddrFree (NET_CACHE_ADDR  *pcache,
              pcache->TxQ_Nbr = 0;
 
                                                                         /* --------------- CLR ARP CACHE -------------- */
-             pcache_arp->State = NET_ARP_CACHE_STATE_FREE;              /* Set ARP cache as freed/NOT used.             */
+             pcache_arp->State          = NET_ARP_CACHE_STATE_FREE;     /* Set ARP cache as freed/NOT used.             */
+             pcache_arp->ReqAttemptsCtr = 0u;
              DEF_BIT_CLR(pcache->Flags, NET_CACHE_FLAG_USED);
 #if (NET_DBG_CFG_MEM_CLR_EN == DEF_ENABLED)
              NetCache_Clr(pcache);
