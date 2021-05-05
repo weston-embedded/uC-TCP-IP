@@ -12247,7 +12247,7 @@ static  void  NetTCP_RxPktConnHandlerFinWait2 (NET_TCP_CONN  *p_conn,
              return;
     }
 
-   *p_err = (data_avail) ? err_rtn : NET_TCP_ERR_CONN_DATA_NONE;
+   *p_err = err_rtn;
 }
 
 
