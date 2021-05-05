@@ -4557,19 +4557,19 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
    switch (p_sock->ProtocolFamily) {
 #ifdef  NET_IPv4_MODULE_EN
        case NET_SOCK_PROTOCOL_FAMILY_IP_V4:
-            if (addr_len < (NET_SOCK_ADDR_LEN)NET_SOCK_ADDR_IPv4_SIZE) {    /* Validate initial addr len (see Note #6a).*/
+            if (addr_len < (NET_SOCK_ADDR_LEN)NET_SOCK_ADDR_IPv4_SIZE) {  /* Validate initial addr len (see Note #6a).  */
                 NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidAddrLenCtr);
                *p_err =  NET_SOCK_ERR_INVALID_ADDR_LEN;
-                goto exit_err_acccept;
+                goto exit_lock_fault;
             }
             break;
 #endif
 #ifdef  NET_IPv6_MODULE_EN
        case NET_SOCK_PROTOCOL_FAMILY_IP_V6:
-            if (addr_len < (NET_SOCK_ADDR_LEN)NET_SOCK_ADDR_IPv6_SIZE) {  /* Validate initial addr len (see Note #6a).            */
+            if (addr_len < (NET_SOCK_ADDR_LEN)NET_SOCK_ADDR_IPv6_SIZE) {  /* Validate initial addr len (see Note #6a).  */
                 NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidAddrLenCtr);
                *p_err =  NET_SOCK_ERR_INVALID_ADDR_LEN;
-                goto exit_err_acccept;
+                goto exit_lock_fault;
             }
             break;
 #endif
@@ -4582,7 +4582,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
    if (p_addr_remote == (NET_SOCK_ADDR *)0) {
        NET_CTR_ERR_INC(Net_ErrCtrs.Sock.NullPtrCtr);
       *p_err =  NET_ERR_FAULT_NULL_PTR;
-       goto exit_err_acccept;
+       goto exit_lock_fault;
    }
 #endif
 
@@ -4598,7 +4598,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
 #if (NET_ERR_CFG_ARG_CHK_EXT_EN == DEF_ENABLED)                         /* -------- VALIDATE LISTEN SOCK USED --------- */
   (void)NetSock_IsUsed(sock_id, p_err);
    if (*p_err != NET_SOCK_ERR_NONE) {
-        goto exit_err_acccept;
+        goto exit_err_accept;
    }
 #endif
 
@@ -4609,7 +4609,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
        case NET_SOCK_TYPE_DATAGRAM:
             NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidSockTypeCtr);
            *p_err =  NET_SOCK_ERR_INVALID_TYPE;
-            goto exit_err_acccept;
+            goto exit_err_accept;
 
 
        case NET_SOCK_TYPE_STREAM:
@@ -4618,21 +4618,21 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
 
        case NET_SOCK_TYPE_NONE:
        case NET_SOCK_TYPE_FAULT:
-       default:                                                        /* See Note #6.                                 */
+       default:                                                         /* See Note #6.                                 */
             NetSock_CloseSock(p_sock_listen, DEF_YES, DEF_YES);
             NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidSockTypeCtr);
            *p_err =  NET_SOCK_ERR_INVALID_TYPE;
-            goto exit_err_acccept;
+            goto exit_err_accept;
    }
 
 
-                                                                       /* ----- VALIDATE LISTEN SOCK CONN STATE ------ */
+                                                                        /* ----- VALIDATE LISTEN SOCK CONN STATE ------ */
    switch (p_sock_listen->State) {
        case NET_SOCK_STATE_FREE:
        case NET_SOCK_STATE_DISCARD:
             NET_CTR_ERR_INC(Net_ErrCtrs.Sock.NotUsedCtr);
            *p_err =  NET_SOCK_ERR_NOT_USED;
-            goto exit_err_acccept;
+            goto exit_err_accept;
 
 
        case NET_SOCK_STATE_LISTEN:
@@ -4641,7 +4641,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
 
        case NET_SOCK_STATE_CLOSED_FAULT:
            *p_err =  NET_SOCK_ERR_CLOSED;
-            goto exit_err_acccept;
+            goto exit_err_accept;
 
 
        case NET_SOCK_STATE_CLOSED:
@@ -4653,7 +4653,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
        case NET_SOCK_STATE_CLOSING_DATA_AVAIL:
             NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidOpCtr);
            *p_err =  NET_SOCK_ERR_INVALID_OP;
-            goto exit_err_acccept;
+            goto exit_err_accept;
 
 
        case NET_SOCK_STATE_NONE:
@@ -4661,7 +4661,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
             NetSock_CloseSock(p_sock_listen, DEF_YES, DEF_YES);
             NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidStateCtr);
            *p_err =  NET_SOCK_ERR_INVALID_STATE;
-            goto exit_err_acccept;
+            goto exit_err_accept;
    }
 
 
@@ -4676,7 +4676,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
        is_rdy_found = NetSock_ConnAcceptQ_IsRdy(p_sock, &local_err);
        if (is_rdy_found == DEF_NO) {
           *p_err =  NET_SOCK_ERR_CONN_ACCEPT_Q_NONE_AVAIL;              /* ... rtn  conn accept Q empty err.            */
-           goto exit_err_acccept;
+           goto exit_err_accept;
        }
    }
 
@@ -4694,36 +4694,36 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
             break;
 
        case NET_SOCK_ERR_CONN_SIGNAL_TIMEOUT:
-            goto exit_err_acccept;                                      /* Rtn err from NetSock_ConnAcceptQ_Wait().  */
+            goto exit_err_accept;                                       /* Rtn err from NetSock_ConnAcceptQ_Wait().     */
 
        case NET_SOCK_ERR_CONN_SIGNAL_ABORT:
        case NET_SOCK_ERR_CONN_SIGNAL_FAULT:
        default:
            *p_err =  NET_SOCK_ERR_FAULT;
-            goto exit_err_acccept;
+            goto exit_err_accept;
    }
 
-                                                                       /* Get conn id from sock conn accept Q.         */
+                                                                        /* Get conn id from sock conn accept Q.         */
    conn_id_accept = NetSock_ConnAcceptQ_ConnID_Get(p_sock_listen, p_err);
    if (*p_err != NET_SOCK_ERR_NONE) {
-        goto exit_err_acccept;
+        goto exit_err_accept;
    }
    if  (conn_id_accept == NET_CONN_ID_NONE) {
        *p_err  = NET_SOCK_ERR_CONN_FAIL;
-        goto exit_err_acccept;
+        goto exit_err_accept;
    }
 
-                                                                       /* Validate transport conn.                     */
+                                                                        /* Validate transport conn.                     */
    conn_id_transport = NetConn_ID_TransportGet(conn_id_accept, &err);
-   if ( err != NET_CONN_ERR_NONE) {                                    /* See Note #8b.                                */
+   if ( err != NET_CONN_ERR_NONE) {                                     /* See Note #8b.                                */
        NetSock_CloseConn(conn_id_accept);
       *p_err  = NET_SOCK_ERR_CONN_FAIL;
-       goto exit_err_acccept;
+       goto exit_err_accept;
    }
    if (conn_id_transport == NET_CONN_ID_NONE) {
        NetSock_CloseConn(conn_id_accept);
       *p_err  = NET_SOCK_ERR_CONN_FAIL;
-       goto exit_err_acccept;
+       goto exit_err_accept;
    }
 
 
@@ -4732,7 +4732,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
    p_sock_accept = NetSock_Get(p_err);
    if (p_sock_accept == (NET_SOCK *)0) {                                /* See Note #8b.                                */
        NetSock_CloseConn(conn_id_accept);
-       goto exit_err_acccept;                                           /* Rtn err from NetSock_Get().                  */
+       goto exit_err_accept;                                            /* Rtn err from NetSock_Get().                  */
    }
 
                                                                         /* Copy listen sock into new accept sock.       */
@@ -4749,7 +4749,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
    if ( err != NET_CONN_ERR_NONE) {                                     /* See Note #8c.                                */
        NetSock_CloseHandler(p_sock_accept, DEF_YES, DEF_YES);
       *p_err  = NET_SOCK_ERR_CONN_FAIL;
-       goto exit_err_acccept;
+       goto exit_err_accept;
    }
 
 
@@ -4769,7 +4769,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
        DEF_BIT_CLR(p_sock_accept->Flags, NET_SOCK_FLAG_SOCK_SECURE_NEGO);
        if (*p_err != NET_SOCK_ERR_NONE) {
             NetSock_CloseHandler(p_sock_accept, DEF_YES, DEF_YES);
-            goto exit_err_acccept;
+            goto exit_err_accept;
        }
    }
 #endif
@@ -4781,16 +4781,16 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
                          (CPU_INT08U        *)&addr_remote[0],
                          (NET_CONN_ADDR_LEN *)&addr_len,
                          (NET_ERR           *)&err);
-   if ( err != NET_CONN_ERR_NONE) {                                    /* See Note #8c.                                */
+   if ( err != NET_CONN_ERR_NONE) {                                     /* See Note #8c.                                */
        NetSock_CloseHandler(p_sock_accept, DEF_YES, DEF_YES);
       *p_err  = NET_SOCK_ERR_CONN_FAIL;
-       goto exit_err_acccept;
+       goto exit_err_accept;
    }
 #if (NET_ERR_CFG_ARG_CHK_DBG_EN == DEF_ENABLED)
-   if (addr_len > NET_SOCK_ADDR_LEN_MAX) {                             /* See Note #8c.                                */
+   if (addr_len > NET_SOCK_ADDR_LEN_MAX) {                              /* See Note #8c.                                */
        NetSock_CloseHandler(p_sock_accept, DEF_YES, DEF_YES);
       *p_err  = NET_SOCK_ERR_INVALID_ADDR_LEN;
-       goto exit_err_acccept;
+       goto exit_err_accept;
    }
 #endif
 
@@ -4798,7 +4798,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
    switch (p_sock_listen->ProtocolFamily) {
 #ifdef  NET_IPv4_MODULE_EN
        case NET_SOCK_PROTOCOL_FAMILY_IP_V4:
-            p_addr_ipv4  = (NET_SOCK_ADDR_IPv4 *)p_addr_remote;          /* Cfg remote addr struct (see Notes #3 & #9b). */
+            p_addr_ipv4  = (NET_SOCK_ADDR_IPv4 *)p_addr_remote;         /* Cfg remote addr struct (see Notes #3 & #9b). */
             NET_UTIL_VAL_SET_HOST_16(&p_addr_ipv4->AddrFamily, NET_SOCK_ADDR_FAMILY_IP_V4);
             NET_UTIL_VAL_COPY_16(&p_addr_ipv4->Port, &addr_remote[NET_SOCK_ADDR_IP_IX_PORT]);
             NET_UTIL_VAL_COPY_32(&p_addr_ipv4->Addr, &addr_remote[NET_SOCK_ADDR_IP_V4_IX_ADDR]);
@@ -4825,7 +4825,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
             NetSock_CloseHandler(p_sock_accept, DEF_YES, DEF_YES);
             NET_CTR_ERR_INC(Net_ErrCtrs.Sock.InvalidFamilyCtr);
            *p_err =  NET_SOCK_ERR_INVALID_FAMILY;
-            goto exit_err_acccept;
+            goto exit_err_accept;
    }
 
   *p_err = NET_SOCK_ERR_NONE;
@@ -4836,7 +4836,7 @@ NET_SOCK_ID  NetSock_Accept (NET_SOCK_ID         sock_id,
 exit_lock_fault:
     return (NET_SOCK_BSD_ERR_ACCEPT);
 
-exit_err_acccept:
+exit_err_accept:
     sock_id_accept = NET_SOCK_BSD_ERR_ACCEPT;
 
 exit_release:
