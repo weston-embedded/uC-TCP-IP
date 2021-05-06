@@ -75,7 +75,7 @@
 *                (b) To remove the increment value to the TCP initial sequence number the following
 *                    define should be added to net_cfg.h (See net_tcp.h Note #3):
 *
-*                      #define  NET_DBG_CFG_TEST_TCP
+*                      #define  NET_TCP_CFG_RANDOM_ISN_GEN
 *********************************************************************************************************
 */
 
