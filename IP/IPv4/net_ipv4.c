@@ -2433,8 +2433,8 @@ NET_IPv4_ADDR  NetIPv4_GetAddrSrcHandler (NET_IPv4_ADDR  addr_remote)
 
         while ((addr_ix   <  p_ip_if_cfg->AddrsNbrCfgd) &&      /* ...  all cfg'd addrs  ...                            */
                (addr_host == NET_IPv4_ADDR_NONE)) {
-            if ((addr_remote & p_ip_addrs->AddrHostSubnetMask) ==
-                               p_ip_addrs->AddrHostSubnetNet ) {
+            if ((NET_UTIL_NET_TO_HOST_32(addr_remote) & p_ip_addrs->AddrHostSubnetMask) ==
+                                                        p_ip_addrs->AddrHostSubnetNet ) {
                 is_valid = NetIPv4_IsValidAddrHost (p_ip_addrs->AddrHost);
                 if (is_valid == DEF_YES) {
                     addr_host = p_ip_addrs->AddrHost;
