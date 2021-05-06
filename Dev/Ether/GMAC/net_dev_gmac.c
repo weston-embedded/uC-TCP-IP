@@ -1679,7 +1679,7 @@ static  void  NetDev_InitHandler (NET_IF      *pif,
              pdev_dma->DMA_BUS_MODE = (GMAC_DMABMR_AAL                 | /* First DMA transfer is 16 byte aligned.      */
                                        GMAC_DMABMR_RX_DMA_1_BEAT       | /* 1 beat max burst per Rx DMA transfer.       */
                                        GMAC_DMABMR_TX_DMA_1_BEAT       | /* 1 beat max burst per Tx DMA transfer.       */
-                                      (GMAC_DMA_DESC_SKIP_LEN << 3u)   | /* desc's are contiguous in mem.               */
+                                      (GMAC_DMA_DESC_SKIP_LEN << 2u)   | /* desc's are contiguous in mem.               */
                                        GMAC_DMABMR_RX_TX_DMA_PRIO_1_1  | /* Rx always take precedence over Tx.          */
                                        GMAC_DMABMR_USP);                 /* Use seperate PBL for Rx & Tx burst len.     */
 
