@@ -1043,7 +1043,12 @@ CPU_INT32U  NetUtil_RandomRangeGet (CPU_INT32U  min,
 * Caller(s)   : NetUtil_InitSeqNbrGet(),
 *               NetUtil_RandRange().
 *
-* Note(s)     : none.
+* Note(s)     : (1) If NET_TCP_CFG_RANDOM_ISN_GEN is defined in net_cfg.h, the user must define a function
+*                   (NetBSP_GetEntropyVal()) in the network BSP file that returns a 32-bit unsigned
+*                   integer random value. This value can be obtained from a hardware random number
+*                   generator (RNG) or some other pseudorandom hardware source. A simple option in the
+*                   absence of a hardware RNG would be to left-shift and OR the lowest bit of an ADC
+*                   reading of a floating pin on the hardware 32 times.
 *********************************************************************************************************
 */
 
@@ -1053,11 +1058,20 @@ static  void  NetUtil_RandSetSeed (void)
     KAL_ERR     err_kal;
 
 
-    val  = Math_Rand();
-#if CPU_CFG_TS_32_EN == DEF_ENABLED
+#ifndef NET_TCP_CFG_RANDOM_ISN_GEN                              /* If the 4 uS timer and entropy source for a more ...  */
+    val = Math_Rand();                                          /* ...random seed are NOT implemented in the BSP,  ...  */
+
+#if CPU_CFG_TS_32_EN == DEF_ENABLED                             /* ... increment random number by a 32-bit timestamp.   */
     val += (CPU_INT32U)CPU_TS_Get32();
 #else
     val += (CPU_INT32U)KAL_TickGet(&err_kal);
+#endif
+
+#else
+                                                                /* Otherwise, generate a more random seed w/ the user...*/
+                                                                /* ... defined BSP function. (See Note #1).             */
+    Math_RandSeedCur = NetBSP_GetEntropyVal();
+    val = Math_Rand();
 #endif
 
    (void)&err_kal;

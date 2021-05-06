@@ -1831,27 +1831,37 @@ NET_TCP_EXT  NET_STAT_POOL     NetTCP_ConnPoolStat;
 *
 *                   (c) As a compromise :
 *
-*                       (1) The developer is required to configure the TCP transmit initial sequence number
-*                           counter (see 'net_util.c  NetUtil_InitSeqNbrGet()  Note #1').
+*                       (1) The developer is required to configure and maintain the TCP transmit initial sequence
+*                           number counter (see 'net_util.c  NetUtil_InitSeqNbrGet()  Note #1'). This counter should
+*                           be driven by a timer that increments the NetTCP_TxSeqNbrCtr global variable every
+*                           4 microseconds as stated in RFC #793, Section 3.3 "Initial Sequence Number Selection".
 *
-*                       (2) However, the TCP initial transmit sequence number is incremented by a fixed
-*                           value each time a new TCP connection is established (see also Note #2b2B).
+*                       (2) However, since the TCP initial transmit sequence number is incremented by a fixed
+*                           value (NET_TCP_TX_SEQ_NBR_CTR_INC) each time a new TCP connection is established
+*                           (see also Note #2b2B), this choice yields predictable initial sequence numbers as laid out in
+*                               RFC #6528. If the developer decides NOT to implement this 4 microsecond timer,
+*                               the TCP connections will be more vulnerable to sequence number attacks.
 *
 *               (2) Return TCP sequence number is NOT converted from host-order to network-order.
 *
-*               (3) Adding NET_DBG_CFG_TEST_TCP in net_cfg.h allow to remove the increment value to the
-*                   TCP sequence number, this can be use for debug purpose.
+*               (3) Adding NET_TCP_CFG_RANDOM_ISN_GEN in net_cfg.h allows for the removal of the increment value
+*                   from the TCP sequence number, this can be used for debug purpose.
 *********************************************************************************************************
 */
 
-#ifndef NET_DBG_CFG_TEST_TCP
+#ifndef NET_TCP_CFG_RANDOM_ISN_GEN
 
-#define  NET_TCP_TX_GET_SEQ_NBR(seq_nbr)        do { NET_UTIL_VAL_COPY_32(&(seq_nbr), &NetTCP_TxSeqNbrCtr); \
-                                                     NetTCP_TxSeqNbrCtr += NET_TCP_TX_SEQ_NBR_CTR_INC;      } while (0)
+#define  NET_TCP_TX_GET_SEQ_NBR(seq_nbr)               do { NET_UTIL_VAL_COPY_32(&(seq_nbr), &NetTCP_TxSeqNbrCtr); \
+                                                            NetTCP_TxSeqNbrCtr += NET_TCP_TX_SEQ_NBR_CTR_INC;      } while (0)
 
 #else
 
-#define  NET_TCP_TX_GET_SEQ_NBR(seq_nbr)        do { NET_UTIL_VAL_COPY_32(&(seq_nbr), &NetTCP_TxSeqNbrCtr); } while (0)
+#define  NET_TCP_TX_GET_SEQ_NBR(seq_nbr, p_net_conn)   do { NET_TCP_SEQ_NBR  new_seq_nbr;                                \
+                                                                                                                         \
+                                                                                                                         \
+                                                            new_seq_nbr = NetTCP_ConnFiveTupleSeqNbrGet(p_net_conn);     \
+                                                            NET_UTIL_VAL_COPY_32(&(seq_nbr), &new_seq_nbr);              \
+                                                       } while (0)
 
 #endif
 
@@ -2128,6 +2138,9 @@ void             NetTCP_TxQ_TimeoutSet                (NET_TCP_CONN_ID       con
 CPU_INT32U       NetTCP_TxQ_TimeoutGet_ms             (NET_TCP_CONN_ID       conn_id_tcp,
                                                        NET_ERR              *p_err);
 
+#ifdef  NET_TCP_CFG_RANDOM_ISN_GEN                                                  /* Get Init Seq Nbr as in RFC #6582.*/
+NET_TCP_SEQ_NBR  NetTCP_ConnFiveTupleSeqNbrGet        (NET_CONN             *p_conn);
+#endif
 
 
 /*
