@@ -6,7 +6,7 @@
 *                                            SEGGER emSSL
 *
 * Filename : net_secure_emssl_hw.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Assumes the following versions (or more recent) of software modules are included in
 *                the project build :

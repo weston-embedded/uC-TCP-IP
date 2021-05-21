@@ -20,7 +20,7 @@
 *                                       ETHERNET INITIALIZATION
 *
 * Filename : init_ether.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) This example shows how to initialize uC/TCP-IP:
 *
