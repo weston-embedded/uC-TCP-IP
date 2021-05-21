@@ -2,7 +2,7 @@
 ;                                              uC/TCP-IP
 ;                                      The Embedded TCP/IP Suite
 ;
-;                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+;                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 ;
 ;                                 SPDX-License-Identifier: APACHE-2.0
 ;
@@ -21,7 +21,7 @@
 ;                                            IAR Compiler
 ;
 ; Filename : net_util_a.asm
-; Version  : V3.06.00
+; Version  : V3.06.01
 ;********************************************************************************************************
 ; Note(s)  : (1) Assumes ARM CPU mode configured for Little Endian.
 ;********************************************************************************************************
