@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -21,7 +21,7 @@
 *                                 (INTERNET GROUP MANAGEMENT PROTOCOL)
 *
 * Filename : net_igmp.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Internet Group Management Protocol ONLY required for network interfaces that require
 *                reception of IP class-D (multicast) packets (see RFC #1112, Section 3 'Levels of

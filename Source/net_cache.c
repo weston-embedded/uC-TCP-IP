@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -20,7 +20,7 @@
 *                                  NETWORK ADDRESS CACHE MANAGEMENT
 *
 * Filename : net_cache.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Address cache management module ONLY required for network interfaces that require
 *                network-address-to-hardware-address bindings (see RFC #826 'Abstract').
@@ -1732,7 +1732,8 @@ static  void  NetCache_AddrFree (NET_CACHE_ADDR  *pcache,
              pcache->TxQ_Nbr = 0;
 
                                                                         /* --------------- CLR ARP CACHE -------------- */
-             pcache_arp->State = NET_ARP_CACHE_STATE_FREE;              /* Set ARP cache as freed/NOT used.             */
+             pcache_arp->State          = NET_ARP_CACHE_STATE_FREE;     /* Set ARP cache as freed/NOT used.             */
+             pcache_arp->ReqAttemptsCtr = 0u;
              DEF_BIT_CLR(pcache->Flags, NET_CACHE_FLAG_USED);
 #if (NET_DBG_CFG_MEM_CLR_EN == DEF_ENABLED)
              NetCache_Clr(pcache);

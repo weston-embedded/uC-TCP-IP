@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -21,7 +21,7 @@
 *                                       (INTERNET PROTOCOL V4)
 *
 * Filename : net_ipv4.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Supports Internet Protocol as described in RFC #791, also known as IPv4, with the
 *                following restrictions/constraints :
@@ -2433,8 +2433,8 @@ NET_IPv4_ADDR  NetIPv4_GetAddrSrcHandler (NET_IPv4_ADDR  addr_remote)
 
         while ((addr_ix   <  p_ip_if_cfg->AddrsNbrCfgd) &&      /* ...  all cfg'd addrs  ...                            */
                (addr_host == NET_IPv4_ADDR_NONE)) {
-            if ((addr_remote & p_ip_addrs->AddrHostSubnetMask) ==
-                               p_ip_addrs->AddrHostSubnetNet ) {
+            if ((NET_UTIL_NET_TO_HOST_32(addr_remote) & p_ip_addrs->AddrHostSubnetMask) ==
+                                                        p_ip_addrs->AddrHostSubnetNet ) {
                 is_valid = NetIPv4_IsValidAddrHost (p_ip_addrs->AddrHost);
                 if (is_valid == DEF_YES) {
                     addr_host = p_ip_addrs->AddrHost;

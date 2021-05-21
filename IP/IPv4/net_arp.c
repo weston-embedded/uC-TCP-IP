@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -21,7 +21,7 @@
 *                                    (ADDRESS RESOLUTION PROTOCOL)
 *
 * Filename : net_arp.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Address Resolution Protocol ONLY required for network interfaces that require
 *                network-address-to-hardware-address bindings (see RFC #826 'Abstract').
@@ -2595,7 +2595,8 @@ static  void  NetARP_RxPktCacheUpdate (NET_IF_NBR    if_nbr,
                  p_buf_head                  =  p_cache_addr_arp->TxQ_Head;
                  p_cache_addr_arp->TxQ_Head  = (NET_BUF *)0;
                  p_cache_addr_arp->TxQ_Tail  = (NET_BUF *)0;
-                 p_cache_addr_arp->TxQ_Nbr   = 0;
+                 p_cache_addr_arp->TxQ_Nbr   = 0u;
+                 p_cache_arp->ReqAttemptsCtr = 0u;              /* Reset request attempts counter.                      */
 
                  if (p_buf_head != DEF_NULL) {
                      NetCache_TxPktHandler(NET_PROTOCOL_TYPE_ARP,
@@ -2620,7 +2621,11 @@ static  void  NetARP_RxPktCacheUpdate (NET_IF_NBR    if_nbr,
                             (CPU_FNCT_PTR)NetARP_CacheRenewTimeout,
                             (NET_TMR_TICK)timeout_tick,
                             (NET_ERR    *)p_err);
-
+                                                                /* If entry was found in RENEW state, transition it  ...*/
+                 if (p_cache_arp->State == NET_ARP_CACHE_STATE_RENEW) { /* ...to RESOLVED & reset the request attempt...*/
+                     p_cache_arp->State = NET_ARP_CACHE_STATE_RESOLVED; /* ...counter.                                  */
+                     p_cache_arp->ReqAttemptsCtr = 0u;
+                 }
                 *p_err = NET_ARP_ERR_CACHE_RESOLVED;
                  break;
 
@@ -3777,15 +3782,21 @@ static  void  NetARP_CacheRenewTimeout (void  *p_cache_timeout)
     p_arp = (NET_CACHE_ADDR_ARP *)p_cache->CacheAddrPtr;
 
     if ((CPU_INT32U)p_arp->AddrProtocolSender[0] != NET_ARP_PROTOCOL_TYPE_NONE) {
+        tx_req = DEF_YES;
+        fcnt   = NetARP_CacheRenewTimeout;
+
         CPU_CRITICAL_ENTER();
-        timeout_tick = NetARP_ReqTimeoutRenew_tick;
+        timeout_tick = NetARP_ReqTimeoutPend_tick;
         CPU_CRITICAL_EXIT();
 
-        fcnt         = NetARP_CacheRenewTimeout;
-        tx_req       = DEF_YES;
-
+        if (p_cache->State == NET_ARP_CACHE_STATE_RENEW) {
+            if (p_cache->ReqAttemptsCtr >= NetARP_ReqMaxAttemptsRenew_nbr) { /* If max nbr of renew attempts reached... */
+                fcnt         = NetARP_CacheReqTimeout;          /* ...invalidate entry by forcing its removal from  ... */
+                tx_req       = DEF_NO;                          /* ... ARP cache thru NetARP_CacheReqTimeout() callback.*/
+                timeout_tick = 0u;
+            }
+        }
     } else {
-
         NetCache_Remove((NET_CACHE_ADDR *)p_arp, DEF_NO);
         return;
     }

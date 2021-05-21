@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -22,7 +22,7 @@
 *                                            SEGGER emSSL
 *
 * Filename : net_secure_emssl.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Assumes the following versions (or more recent) of software modules are included in
 *                the project build :
@@ -1971,7 +1971,7 @@ NET_SOCK_RTN_CODE  NetSecure_SockRxDataHandler (NET_SOCK    *p_sock,
                                                 NET_ERR     *p_err)
 {
     CPU_INT32S          result;
-    CPU_BOOLEAN         rx_q_empty;
+    CPU_BOOLEAN         rx_q_closed;
     NET_SOCK_RTN_CODE   ret_err;
     NET_CONN_ID         tcp_conn_id;
     NET_SOCK_ID         sock_id;
@@ -1980,10 +1980,10 @@ NET_SOCK_RTN_CODE  NetSecure_SockRxDataHandler (NET_SOCK    *p_sock,
     CPU_BOOLEAN         block;
 
 
-    sock_id    = p_sock->ID;
-    rx_q_empty = DEF_FALSE;
-    ret_err    = NET_SOCK_BSD_ERR_RX;
-   *p_err      = NET_SOCK_ERR_NONE;
+    sock_id     = p_sock->ID;
+    rx_q_closed = DEF_FALSE;
+    ret_err     = NET_SOCK_BSD_ERR_RX;
+   *p_err       = NET_SOCK_ERR_NONE;
 
     if (p_sock->SecureSession == (SSL_SESSION *)0) {
        *p_err = NET_SECURE_ERR_NULL_PTR;
@@ -2015,8 +2015,8 @@ NET_SOCK_RTN_CODE  NetSecure_SockRxDataHandler (NET_SOCK    *p_sock,
     }
     if (result < 0) {
         tcp_conn_id =  NetConn_Tbl[p_sock->ID_Conn].ID_Transport;
-        rx_q_empty  = (NetTCP_ConnTbl[tcp_conn_id].RxQ_App_Head == (NET_BUF *)0);
-       (rx_q_empty) ? (*p_err = NET_SOCK_ERR_RX_Q_CLOSED) : (*p_err = NET_ERR_RX);
+        rx_q_closed = (NetTCP_ConnTbl[tcp_conn_id].RxQ_State == NET_TCP_RX_Q_STATE_CLOSED);
+       *p_err       = (rx_q_closed) ? (NET_SOCK_ERR_RX_Q_CLOSED) : (NET_ERR_RX);
     } else {
         ret_err = result;
     }

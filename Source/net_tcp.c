@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -21,7 +21,7 @@
 *                                   (TRANSMISSION CONTROL PROTOCOL)
 *
 * Filename : net_tcp.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Supports Transmission Control Protocol as described in RFC #793 with the following
 *                restrictions/constraints :
@@ -73,6 +73,10 @@
 #include  "../IP/IPv6/net_icmpv6.h"
 #endif
 
+#ifdef  NET_TCP_CFG_RANDOM_ISN_GEN
+#include  "../Modules/Common/net_md5.h"
+#endif
+
 #include  "net.h"
 #include  "net_buf.h"
 #include  "net_conn.h"
@@ -101,6 +105,10 @@
 
 #define  NET_TCP_RX_Q_NAME               "Net TCP Rx Q signal"
 #define  NET_TCP_TX_Q_NAME               "Net TCP Tx Q signal"
+
+#ifdef   NET_TCP_CFG_RANDOM_ISN_GEN
+#define  NET_TCP_SECRET_KEY_SIZE                            4u  /* Nbr of 32-bit integers that comprise ISN secret key. */
+#endif
 
 
 /*
@@ -295,6 +303,20 @@ typedef  NET_TCP_CLOSE_CODE  NET_TCP_FREE_CODE;
 */
 
 static  NET_TCP_SEQ_NBR   NetTCP_TxSeqNbrCtr;                   /* Global tx seq nbr ctr.                               */
+
+#ifdef  NET_TCP_CFG_RANDOM_ISN_GEN
+static  NET_MD5_CONTEXT   NetTCP_ISN_MD5_Handle;
+                                                                /* 128-bit secret obtained at start-up (See RFC #6528). */
+static  CPU_INT32U        NetTCP_ISN_SecretKey[NET_TCP_SECRET_KEY_SIZE];
+
+typedef struct            net_tcp_isn_five_tuple {
+        CPU_INT08U        Local_IP [NET_CONN_ADDR_LEN_MAX];
+        CPU_INT08U        Remote_IP[NET_CONN_ADDR_LEN_MAX];
+        CPU_INT16U        Local_Port;
+        CPU_INT16U        Remote_Port;
+        CPU_INT32U        Secret[NET_TCP_SECRET_KEY_SIZE];
+} NET_TCP_ISN_FIVE_TUPLE;
+#endif
 
 
 /*
@@ -876,8 +898,13 @@ void  NetTCP_Init (NET_ERR  *p_err)
     NET_ERR            err;
 
                                                                 /* --------------- PERFORM TCP/BSP INIT --------------- */
-    NetTCP_TxSeqNbrCtr = NetUtil_InitSeqNbrGet();               /* Init tx seq nbr ctr.                                 */
+    NetTCP_TxSeqNbrCtr = NetUtil_InitSeqNbrGet();               /* Init tx seq nbr ctr. User must increment every 4 uS. */
 
+#ifdef  NET_TCP_CFG_RANDOM_ISN_GEN                              /* Populate secret key. (See RFC #6528).                */
+    for (int i = 0; i < (sizeof(NetTCP_ISN_SecretKey) / sizeof(CPU_INT32U)); i++) {
+         NetTCP_ISN_SecretKey[i] = NetUtil_RandomRangeGet(0u, DEF_INT_32U_MAX_VAL);
+    }
+#endif
 
                                                                 /* ------------- INIT TCP CONN POOL/STATS ------------- */
     NetTCP_ConnPoolPtr = DEF_NULL;                              /* Init-clr TCP conn pool (see Note #2b).               */
@@ -2697,7 +2724,7 @@ void  NetTCP_TxConnReq (NET_TCP_CONN_ID   conn_id_tcp,
 
                                                                 /* -------------- UPDATE TCP CONN STATE --------------- */
     state             = p_conn->ConnState;
-    p_conn->ConnState  = NET_TCP_CONN_STATE_SYNC_TXD;
+    p_conn->ConnState = NET_TCP_CONN_STATE_SYNC_TXD;
 
 
                                                                 /* ----------------- TX TCP CONN REQ ------------------ */
@@ -12247,7 +12274,7 @@ static  void  NetTCP_RxPktConnHandlerFinWait2 (NET_TCP_CONN  *p_conn,
              return;
     }
 
-   *p_err = (data_avail) ? err_rtn : NET_TCP_ERR_CONN_DATA_NONE;
+   *p_err = err_rtn;
 }
 
 
@@ -20755,7 +20782,11 @@ static  void  NetTCP_TxConnSync (NET_TCP_CONN        *p_conn,
 
                                                                 /* Prepare TCP sync seq nbrs.                           */
     if (state != NET_TCP_CONN_STATE_SYNC_TXD) {                 /* For non-sync-tx'd states (see Note #6b), ...         */
-        NET_TCP_TX_GET_SEQ_NBR(seq_nbr);                        /* ... get sync seq nbr.                                */
+#ifndef  NET_TCP_CFG_RANDOM_ISN_GEN
+        NET_TCP_TX_GET_SEQ_NBR(seq_nbr);                        /* ... get sync seq nbr. (See Note #1 of macro's def.). */
+#else
+        NET_TCP_TX_GET_SEQ_NBR(seq_nbr, p_net_conn);            /* ... get sync seq nbr as specified RFC #6528, (i.e ...*/
+#endif                                                          /* ... hash IPs, ports, secret key & add to 4uS tmr val.*/
     } else {
         seq_nbr = p_conn->TxSeqNbrSync;
     }
@@ -31227,6 +31258,122 @@ static  void  NetTCP_ConnDiscard (NET_TCP_CONN  *p_conn)
                                                                 /* --------------- UPDATE DISCARD STATS --------------- */
     NetStat_PoolEntryLostInc(&NetTCP_ConnPoolStat, &err);
 }
+
+
+/*
+*********************************************************************************************************
+*                                    NetTCP_ConnFiveTupleSeqNbrGet()
+*
+* Description : (1) Get the initial sequence number for a new TCP connection just before a SYN is sent for
+*                   the first time in an active open OR just after a SYN is recived in a passive open.
+*
+* Argument(s) : p_conn       Pointer to valid Network Connection associated with the TCP Connection.
+*
+* Return(s)   : The sequence number as the following:
+*
+*                              ISN = M + F(localip, localport, remoteip, remoteport, secretkey)
+*
+*               Where:
+*                              M = The value of a counter (NetTCP_TxSeqNbrCtr) maintained by the developer
+*                                  at the BSP level. The counter must be incremented by '1' every 4 uS.
+*
+*                              F = A mixing function (chosen to be MD5) that takes as input the five-tuple:
+*                                  (localip, localport, remoteip, remoteport, secretkey); of which the first
+*                                  four coordinates are known but 'secretkey' must be chosen preferably at
+*                                  boot time (See NetTCP_Init()).
+*
+* Caller(s)   :  via NET_TCP_TX_GET_SEQ_NBR() macro.
+*
+* Note(s)     : none.
+*********************************************************************************************************
+*/
+
+#ifdef  NET_TCP_CFG_RANDOM_ISN_GEN
+NET_TCP_SEQ_NBR  NetTCP_ConnFiveTupleSeqNbrGet (NET_CONN  *p_conn)
+{
+    NET_CONN_FAMILY          conn_family;
+    CPU_INT08U               hash_output[16u];
+    NET_TCP_SEQ_NBR          seq_nbr;
+    NET_TCP_ISN_FIVE_TUPLE   isn_five_tuple;
+#ifdef  NET_IPv6_MODULE_EN
+    CPU_INT08U               ipv6_addr_offset;
+#endif
+
+    conn_family = p_conn->Family;
+
+    Mem_Clr(hash_output, sizeof(hash_output));
+
+    switch (conn_family) {
+#ifdef  NET_IPv4_MODULE_EN
+        case  NET_CONN_FAMILY_IP_V4_SOCK:
+              Mem_Copy(&isn_five_tuple.Local_IP,
+                       &p_conn->AddrLocal[NET_SOCK_ADDR_IP_LEN_PORT],
+                        NET_IPv4_ADDR_LEN);
+
+              Mem_Copy(&isn_five_tuple.Local_Port,
+                        p_conn->AddrLocal,
+                        NET_SOCK_ADDR_IP_LEN_PORT);
+
+              Mem_Copy(&isn_five_tuple.Remote_IP,
+                       &p_conn->AddrRemote[NET_SOCK_ADDR_IP_LEN_PORT],
+                        NET_IPv4_ADDR_LEN);
+
+              Mem_Copy(&isn_five_tuple.Remote_Port,
+                        p_conn->AddrRemote,
+                        NET_SOCK_ADDR_IP_LEN_PORT);
+
+              isn_five_tuple.Local_Port  = NET_UTIL_HOST_TO_NET_16(isn_five_tuple.Local_Port);
+              isn_five_tuple.Remote_Port = NET_UTIL_HOST_TO_NET_16(isn_five_tuple.Remote_Port);
+              break;
+#endif
+
+#ifdef  NET_IPv6_MODULE_EN
+        case  NET_CONN_FAMILY_IP_V6_SOCK:                       /* Skip Port & FlowInfo fields to calculate addr offset.*/
+              ipv6_addr_offset = sizeof(NET_PORT_NBR) + sizeof(CPU_INT32U);
+
+              Mem_Copy(                &isn_five_tuple.Local_IP,
+                       (NET_IPv6_ADDR *)p_conn->AddrLocal[ipv6_addr_offset],
+                                        NET_IPv6_ADDR_LEN);
+
+              Mem_Copy(&isn_five_tuple.Local_Port,
+                       &p_conn->AddrLocal,
+                        NET_SOCK_ADDR_IP_LEN_PORT);
+
+              Mem_Copy(                &isn_five_tuple.Remote_IP,
+                       (NET_IPv6_ADDR *)p_conn->AddrRemote[ipv6_addr_offset],
+                                        NET_IPv6_ADDR_LEN);
+
+              Mem_Copy(&isn_five_tuple.Remote_Port,
+                       &p_conn->AddrRemote,
+                        NET_SOCK_ADDR_IP_LEN_PORT);
+
+              isn_five_tuple.Local_Port = NET_UTIL_HOST_TO_NET_16(isn_five_tuple.Local_Port);
+              isn_five_tuple.Remote_Port = NET_UTIL_HOST_TO_NET_16(isn_five_tuple.Remote_Port);
+              break;
+#endif
+
+        default:                                                /* Shouldn't get here. Conn family validated by caller. */
+              break;
+    }
+
+    Mem_Copy(isn_five_tuple.Secret,                             /* Load secret key obtained by NetTCP_Init() on startup.*/
+             &NetTCP_ISN_SecretKey,
+              sizeof(NetTCP_ISN_SecretKey));
+
+    NetMD5_Init(&NetTCP_ISN_MD5_Handle);                        /* Initialize ISN Handle for MD5 hashing.               */
+    NetMD5_Update(              &NetTCP_ISN_MD5_Handle,         /* Update and obtain final MD5 digest.                  */
+                  (CPU_INT08U *)&isn_five_tuple,
+                                 sizeof(NET_TCP_ISN_FIVE_TUPLE));
+
+    NetMD5_Final(hash_output, &NetTCP_ISN_MD5_Handle);
+
+    seq_nbr = *(CPU_INT32U *)hash_output + NetTCP_TxSeqNbrCtr;  /* Add lower 4 bytes of the hash to sequence nbr counter.*/
+
+    Mem_Clr(&NetTCP_ISN_MD5_Handle, sizeof(NET_MD5_CONTEXT));
+
+    return (seq_nbr);
+}
+#endif
 
 
 /*

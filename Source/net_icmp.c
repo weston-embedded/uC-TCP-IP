@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -21,7 +21,7 @@
 *                                 (INTERNET CONTROL MESSAGE PROTOCOL)
 *
 * Filename : net_icmp.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 */
 
@@ -371,6 +371,7 @@ CPU_BOOLEAN  NetICMP_TxEchoReq (CPU_INT08U       *p_addr_dest,
     KAL_SEM_HANDLE      sem_handle;
     LIB_ERR             lib_err;
     KAL_ERR             kal_err;
+    NET_ERR             net_lock_err;
 
 
 #if (NET_ERR_CFG_ARG_CHK_EXT_EN == DEF_ENABLED)
@@ -395,10 +396,11 @@ CPU_BOOLEAN  NetICMP_TxEchoReq (CPU_INT08U       *p_addr_dest,
 
 #endif
 
-    NetICMP_LockAcquire(p_err);
-    if (*p_err != NET_ICMP_ERR_NONE) {
-         result = DEF_FAIL;
-         goto exit_return;
+    NetICMP_LockAcquire(&net_lock_err);
+    if (net_lock_err != NET_ICMP_ERR_NONE) {
+        result       = DEF_FAIL;
+       *p_err        = net_lock_err;
+        goto exit_return;
     }
 
 
@@ -519,7 +521,7 @@ CPU_BOOLEAN  NetICMP_TxEchoReq (CPU_INT08U       *p_addr_dest,
 
 
 release:
-    NetICMP_LockAcquire(p_err);
+    NetICMP_LockAcquire(&net_lock_err);
 
     KAL_SemDel(sem_handle, &kal_err);
 

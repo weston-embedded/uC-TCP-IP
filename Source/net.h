@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -20,7 +20,7 @@
 *                                         NETWORK HEADER FILE
 *
 * Filename : net.h
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) Assumes the following versions (or more recent) of software modules are included in
 *                the project build :
@@ -75,7 +75,7 @@
 *                (b) To remove the increment value to the TCP initial sequence number the following
 *                    define should be added to net_cfg.h (See net_tcp.h Note #3):
 *
-*                      #define  NET_DBG_CFG_TEST_TCP
+*                      #define  NET_TCP_CFG_RANDOM_ISN_GEN
 *********************************************************************************************************
 */
 
@@ -125,7 +125,7 @@
 *********************************************************************************************************
 */
 
-#define  NET_VERSION                                   30600u   /* See Note #1.                                         */
+#define  NET_VERSION                                   30601u   /* See Note #1.                                         */
 
 
 /*

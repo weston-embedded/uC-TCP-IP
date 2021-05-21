@@ -3,7 +3,7 @@
 *                                              uC/TCP-IP
 *                                      The Embedded TCP/IP Suite
 *
-*                    Copyright 2004-2020 Silicon Laboratories Inc. www.silabs.com
+*                    Copyright 2004-2021 Silicon Laboratories Inc. www.silabs.com
 *
 *                                 SPDX-License-Identifier: APACHE-2.0
 *
@@ -20,7 +20,7 @@
 *                                      NETWORK BUFFER MANAGEMENT
 *
 * Filename : net_buf.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 */
 
@@ -2818,13 +2818,11 @@ static  void  NetBuf_FreeHandler (NET_BUF  *p_buf)
 
     if_nbr = p_buf_hdr->IF_Nbr;
 
-#if (NET_ERR_CFG_ARG_CHK_DBG_EN == DEF_ENABLED)                 /* --------------- VALIDATE NET IF NBR ---------------- */
+                                                                /* --------------- VALIDATE NET IF NBR ---------------- */
    (void)NetIF_IsValidHandler(if_nbr, &err);
     if (err != NET_IF_ERR_NONE) {
         return;
     }
-#endif
-
 
                                                                 /* ------------------- CFG BUF FREE ------------------- */
     ppool = &NetBuf_PoolsTbl[if_nbr];

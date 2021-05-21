@@ -20,7 +20,7 @@
 *                                         MULTICAST ECHO SERVER
 *
 * Filename : mcast_echo_server.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) This example shows how to create a UDP Multicast echo server using IPv4 string address.
 *********************************************************************************************************

@@ -17,11 +17,9 @@
 /*
 *********************************************************************************************************
 *
-*                                        NETWORK DEVICE DRIVER
+*                                     NETWORK CRYPTO MD5 UTILITY
 *
-*                                           Renesas H8S2472
-*
-* Filename : net_dev_h8s2472_isr.c
+* Filename : net_md5.h
 * Version  : V3.06.01
 *********************************************************************************************************
 */
@@ -29,83 +27,57 @@
 /*
 *********************************************************************************************************
 *********************************************************************************************************
-**                                         Global Functions
+*                                           INCLUDES FILES
 *********************************************************************************************************
 *********************************************************************************************************
 */
 
-#pragma asm
-        .IMPORT _OSTCBCur
-        .IMPORT _OSIntExit
-        .IMPORT _OSIntNesting
-        .IMPORT _NetBSP_ENET_ISR_Handler
-#pragma endasm
+#include  <Source/net.h>
+#include  <lib_mem.h>
+
 
 /*
 *********************************************************************************************************
-*                                               MACROS
+*********************************************************************************************************
+*                                            LOCAL DEFINES
+*********************************************************************************************************
 *********************************************************************************************************
 */
 
-#pragma asm
-          .MACRO   PUSHALL
-          PUSH.L    ER0
-          PUSH.L    ER1
-          PUSH.L    ER2
-          PUSH.L    ER3
-          PUSH.L    ER4
-          PUSH.L    ER5
-          PUSH.L    ER6
-          .ENDM
-
-          .MACRO   POPALL
-          POP.L     ER6
-          POP.L     ER5
-          POP.L     ER4
-          POP.L     ER3
-          POP.L     ER2
-          POP.L     ER1
-          POP.L     ER0
-          .ENDM
-#pragma endasm
 
 /*
 *********************************************************************************************************
-*                                             NetDEV_ISR()
-*
-* Description : EtherC ISR, calls the ISR handler :
-*
-* Argument(s) : none.
-*
-* Return(s)   : none.
-*
-* Caller(s)   : This is an ISR.
-
+*********************************************************************************************************
+*                                     LOCAL FUNCTION PROTOTYPTES
+*********************************************************************************************************
 *********************************************************************************************************
 */
 
-#pragma noregsave NetDev_ISR
-#pragma interrupt (NetDev_ISR(vect=119))
-void  NetDev_ISR (void)
-{
-#pragma asm
-          PUSHALL
+#ifndef  NET_MD5_MODULE_PRESENT
+#define  NET_MD5_MODULE_PRESENT
 
-_NetDev_ISR1:
-          MOV.B    @_OSIntNesting, R6L
-          INC.B    R6L
-          MOV.B    R6L, @_OSIntNesting
-          CMP.B    #1,R6L
-          BNE      _NetDev_ISR1_1
 
-          MOV.L    @_OSTCBCur, ER6
-          MOV.L    ER7, @ER6
 
-_NetDev_ISR1_1:
-          JSR      @_NetBSP_ENET_ISR_Handler
-          JSR      @_OSIntExit
+typedef  struct  MD5Context  NET_MD5_CONTEXT;
 
-          POPALL
-#pragma endasm
-}
+struct MD5Context {
+    CPU_INT32U  state [ 4u];
+    CPU_INT32U  count [ 2u];
+    CPU_INT08U  buffer[64u];
+};
 
+void NetMD5_Init      (        NET_MD5_CONTEXT         *p_context);
+
+void NetMD5_Update    (        NET_MD5_CONTEXT         *p_context,
+                       const   CPU_INT08U              *p_buf,
+                               CPU_INT32U               len);
+
+void NetMD5_Final     (        CPU_INT08U               digest[16u],
+                               NET_MD5_CONTEXT         *p_context);
+
+void NetMD5_Transform (        CPU_INT32U               state[ 4u],
+                       const   CPU_INT08U               block[64u]);
+
+
+
+#endif /* !MD5_H */

@@ -20,7 +20,7 @@
 *                                           TCP ECHO SERVER
 *
 * Filename : tcp_server.c
-* Version  : V3.06.00
+* Version  : V3.06.01
 *********************************************************************************************************
 * Note(s)  : (1) This example shows how to create a TCP server that accept IPv4 or IPv6 connections.
 *********************************************************************************************************
