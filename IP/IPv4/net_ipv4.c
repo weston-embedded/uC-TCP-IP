@@ -8293,11 +8293,11 @@ static  void  NetIPv4_TxPktValidateOpt (void     *p_opts,
                                         NET_ERR  *p_err)
 {
     CPU_INT08U          opt_len_size;
-    CPU_INT08U          opt_len;
+    CPU_INT08U          opt_len = 0;
     CPU_INT08U          opt_nbr_route_ts;
     NET_IPv4_OPT_TYPE  *p_opt_cfg_type;
     void               *p_opt_cfg;
-    void               *p_opt_next;
+    void               *p_opt_next = (void *)0;
 
 
     opt_len_size     = 0u;

@@ -12065,7 +12065,7 @@ static  void  NetTCP_RxPktConnHandlerFinWait2 (NET_TCP_CONN  *p_conn,
     NET_TCP_SEQ_CODE    seq_code;
     NET_TCP_ACK_CODE    ack_code;
     NET_TCP_RESET_CODE  reset_code;
-    CPU_BOOLEAN         data_avail;
+    CPU_BOOLEAN         data_avail = DEF_NO;
     NET_TMR_TICK        timeout_tick;
     CPU_FNCT_PTR        timeout_fnct;
     NET_TCP_FREE_CODE   free_code;
@@ -28810,7 +28810,7 @@ static  void  NetTCP_TxPktValidateOpt (void           *p_opts_tcp,
     CPU_INT08U         opt_nbr_max_seg_size;
     NET_TCP_OPT_TYPE  *p_opt_cfg_type;
     void              *p_opt_cfg;
-    void              *p_opt_next;
+    void              *p_opt_next = (void *)0;
 
 
     opt_len_size         = 0u;
