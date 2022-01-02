@@ -29728,7 +29728,7 @@ static  void  NetTCP_TxPktPrepareHdr (NET_BUF           *p_buf,
     NET_TCP_HDR_FLAGS     tcp_flags;
     NET_TCP_HDR_FLAGS     tcp_hdr_len_flags;
     CPU_INT16U            tcp_opt_ix;
-    NET_CHK_SUM           tcp_chk_sum;
+    NET_CHK_SUM           tcp_chk_sum = 0u;
 
                                                                 /* ----------------- UPDATE BUF CTRLS ----------------- */
     p_buf_hdr->TransportHdrLen   =  tcp_hdr_len_tot;
