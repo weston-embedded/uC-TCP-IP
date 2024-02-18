@@ -2928,8 +2928,8 @@ static  void  NetICMPv6_RxPktValidate (NET_BUF         *p_buf,
         case NET_ICMPv6_MSG_TYPE_NDP_REDIRECT:
         case NET_ICMPv6_MSG_TYPE_MLDP_QUERY:
         case NET_ICMPv6_MSG_TYPE_MLDP_REPORT_V1:
-#ifdef  NET_ICMP_CHK_SUM_OFFLOAD_RX_EN
-            icmp_chk_sum_valid  = DEF_YES;
+#ifdef  NET_ICMP_CHK_SUM_OFFLOAD_RX
+             icmp_chk_sum_valid = DEF_YES;
 #else
              icmp_chk_sum_valid = NetUtil_16BitOnesCplChkSumDataVerify((void        *) p_buf,
                                                                        (void        *)&ipv6_pseudo_hdr,
@@ -3303,13 +3303,14 @@ static  void  NetICMPv6_TxMsgErrValidate (NET_BUF       *p_buf,
 
                                                                 /* ---------------- CHK ICMPv6 ERR MSG ---------------- */
     if (p_ip_hdr->NextHdr == NET_IP_HDR_PROTOCOL_ICMPv6) {      /* If rx'd IP datagram is ICMPv6, ...                   */
+        if (p_buf_hdr->ICMP_MsgIx == NET_BUF_IX_NONE) {         /* ...first chk if msg index is valid, ...              */
 #if (NET_ERR_CFG_ARG_CHK_DBG_EN == DEF_ENABLED)
-        if (p_buf_hdr->ICMP_MsgIx == NET_BUF_IX_NONE) {
             NET_CTR_ERR_INC(Net_ErrCtrs.ICMPv6.RxInvalidBufIxCtr);
+#endif
            *p_err = NET_BUF_ERR_INVALID_IX;
             return;
         }
-#endif
+
         p_icmp_hdr = (NET_ICMPv6_HDR *)&p_buf->DataPtr[p_buf_hdr->ICMP_MsgIx];
 
         switch (p_icmp_hdr->Type) {                              /* ... chk ICMPv6 msg type & ...                        */

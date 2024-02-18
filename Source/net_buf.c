@@ -1152,7 +1152,7 @@ void  NetBuf_Free (NET_BUF  *p_buf)
 *               This function is an INTERNAL network protocol suite function & SHOULD NOT be called by
 *               application function(s).
 *
-* Note(s)     : (1) Buffers are NOT validated for 'Type' or 'USED' before freeing. #### NET-808
+* Note(s)     : (1) Buffers are NOT validated for 'Type' before freeing. #### NET-808
 *
 *                   See also 'NetBuf_FreeHandler()  Note #2'.
 *
@@ -1239,7 +1239,7 @@ NET_BUF_QTY  NetBuf_FreeBuf (NET_BUF  *p_buf,
 *               This function is an INTERNAL network protocol suite function & SHOULD NOT be called by
 *               application function(s).
 *
-* Note(s)     : (2) Buffers are NOT validated for 'Type' or 'USED' before freeing. #### NET-808
+* Note(s)     : (2) Buffers are NOT validated for 'Type' before freeing. #### NET-808
 *
 *                   See also 'NetBuf_FreeHandler()  Note #2'.
 *
@@ -1376,7 +1376,7 @@ NET_BUF_QTY  NetBuf_FreeBufList (NET_BUF  *p_buf_list,
 *               This function is an INTERNAL network protocol suite function & SHOULD NOT be called by
 *               application function(s).
 *
-* Note(s)     : (2) Buffers are NOT validated for 'Type' or 'USED' before freeing. #### NET-808
+* Note(s)     : (2) Buffers are NOT validated for 'Type' before freeing. #### NET-808
 *
 *                   See also 'NetBuf_FreeHandler()  Note #2'.
 *
@@ -1527,7 +1527,7 @@ NET_BUF_QTY  NetBuf_FreeBufQ_PrimList (NET_BUF  *p_buf_q,
 *               This function is an INTERNAL network protocol suite function & SHOULD NOT be called by
 *               application function(s).
 *
-* Note(s)     : (2) Buffers are NOT validated for 'Type' or 'USED' before freeing. #### NET-808
+* Note(s)     : (2) Buffers are NOT validated for 'Type' before freeing. #### NET-808
 *
 *                   See also 'NetBuf_FreeHandler()  Note #2'.
 *
@@ -2793,9 +2793,7 @@ exit_release:
 
 static  void  NetBuf_FreeHandler (NET_BUF  *p_buf)
 {
-#if (NET_ERR_CFG_ARG_CHK_DBG_EN == DEF_ENABLED)
     CPU_BOOLEAN     used;
-#endif
     NET_IF_NBR      if_nbr;
     NET_BUF_HDR    *p_buf_hdr;
     NET_BUF_POOLS  *ppool;
@@ -2808,16 +2806,16 @@ static  void  NetBuf_FreeHandler (NET_BUF  *p_buf)
 
     p_buf_hdr = &p_buf->Hdr;
 
-#if (NET_ERR_CFG_ARG_CHK_DBG_EN == DEF_ENABLED)                 /* ---------------- VALIDATE BUF USED ----------------- */
+                                                                /* ---------------- VALIDATE BUF USED ----------------- */
     used = DEF_BIT_IS_SET(p_buf_hdr->Flags, NET_BUF_FLAG_USED);
     if (used != DEF_YES) {                                      /* If buf NOT used, ...                                 */
+#if (NET_ERR_CFG_ARG_CHK_DBG_EN == DEF_ENABLED)
         NET_CTR_ERR_INC(Net_ErrCtrs.Buf.NotUsedCtr);
+#endif
         return;                                                 /* ... rtn but do NOT free (see Note #2).               */
     }
-#endif
 
     if_nbr = p_buf_hdr->IF_Nbr;
-
                                                                 /* --------------- VALIDATE NET IF NBR ---------------- */
    (void)NetIF_IsValidHandler(if_nbr, &err);
     if (err != NET_IF_ERR_NONE) {
