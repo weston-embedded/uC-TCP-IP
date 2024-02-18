@@ -16434,7 +16434,6 @@ static  void  NetTCP_RxPktConnHandlerReTxQ (NET_TCP_CONN      *p_conn,
     NET_TCP_SEQ_NBR        seq_nbr_next               = 0u;
     NET_TCP_SEQ_NBR        seq_nbr                    = 0u;
     NET_TCP_SEG_SIZE       seg_len                    = 0u;
-    NET_TCP_SEG_SIZE       seg_len_tot                = 0u;
     NET_TCP_SEG_SIZE       seg_len_data               = 0u;
     NET_TCP_SEG_SIZE       seg_len_data_tot           = 0u;
     NET_TCP_TX_RTT_TS_MS   seg_rtt_ts_txd_ms          = 0u;
@@ -16588,7 +16587,6 @@ static  void  NetTCP_RxPktConnHandlerReTxQ (NET_TCP_CONN      *p_conn,
     p_buf_q_head     = p_conn->ReTxQ_Head;
     p_buf_q_prev     = DEF_NULL;
     p_buf_q          = p_buf_q_head;
-    seg_len_tot      = 0u;
     seg_len_data_tot = 0u;
                                                                 /* Chk re-tx'd seg(s) [see Notes #8a2A1 & #4].          */
     segs_re_txd      = (p_conn->TxSeqNbrUnAckdPrev == p_conn->TxSeqNbrUnReTxd)
@@ -16633,7 +16631,6 @@ static  void  NetTCP_RxPktConnHandlerReTxQ (NET_TCP_CONN      *p_conn,
             p_buf_q_prev                     = p_buf_q;
             p_buf_q                          = p_buf_q_next;    /* ... adv to next re-tx Q seg.                         */
             p_conn->TxSeqNbrUnAckdAlignDelta = 0u;
-            seg_len_tot                     += seg_len;
             seg_len_data_tot                += seg_len_data;
             seqs_ackd                        = DEF_YES;
 
@@ -16662,7 +16659,6 @@ static  void  NetTCP_RxPktConnHandlerReTxQ (NET_TCP_CONN      *p_conn,
                 p_buf_q_hdr->TCP_SeqNbr         += ack_delta_seq_align;
                 p_buf_q_hdr->TCP_SegLen         -= ack_delta_seq_align;
                 p_buf_q_hdr->TCP_SegLenData     -= ack_delta_seq_align;
-                seg_len_tot                     += ack_delta_seq_align;
                 seg_len_data_tot                += ack_delta_seq_align;
                                                                 /* ... & update TCP tx buf ctrls.                       */
                 p_buf_q_hdr->DataIx             += ack_delta_seq_align;
