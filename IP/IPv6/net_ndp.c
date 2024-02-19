@@ -1258,19 +1258,19 @@ const  NET_IPv6_ADDR  *NetNDP_NextHop (       NET_IF_NBR     *p_if_nbr,
                                               NET_ERR        *p_err)
 {
            NET_IF_NBR           if_nbr;
-           NET_NDP_DEST_CACHE  *p_dest;
+           NET_NDP_DEST_CACHE  *p_dest = (void *)0;
            NET_NDP_DEST_CACHE  *p_dest_tmp;
            NET_NDP_ROUTER      *p_router;
-    const  NET_IPv6_ADDR       *p_addr_nexthop;
+    const  NET_IPv6_ADDR       *p_addr_nexthop = (void *)0;
            NET_IPv6_ADDR       *p_addr_nexthop_tmp;
            NET_IF_NBR           if_nbr_tmp;
-           NET_IF_NBR           if_nbr_src_addr;
+           NET_IF_NBR           if_nbr_src_addr = 0;
            CPU_INT08U           valid_nbr_current;
            CPU_INT08U           valid_nbr_best;
            CPU_BOOLEAN          link_local;
            CPU_BOOLEAN          addr_mcast;
            CPU_BOOLEAN          on_link;
-           CPU_BOOLEAN          add_dest;
+           CPU_BOOLEAN          add_dest = DEF_NO;
            CPU_BOOLEAN          add_dest_tmp;
            CPU_BOOLEAN          dflt_router;
            CPU_BOOLEAN          is_mcast_grp;

@@ -188,22 +188,22 @@
     #ifdef   IN6ADDR_ANY_INIT
     #undef   IN6ADDR_ANY_INIT
     #endif
-    #define  IN6ADDR_ANY_INIT                                { 0,   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    #define  IN6ADDR_ANY_INIT                                {{ 0,   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }}
 
     #ifdef   IN6ADDR_LOOPBACK_INIT
     #undef   IN6ADDR_LOOPBACK_INIT
     #endif
-    #define  IN6ADDR_LOOPBACK_INIT                           { 0,   0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }
+    #define  IN6ADDR_LOOPBACK_INIT                           {{ 0,   0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }}
 
     #ifdef   IN6ADDR_LINKLOCAL_ALLNODES_INIT
     #undef   IN6ADDR_LINKLOCAL_ALLNODES_INIT
     #endif
-    #define  IN6ADDR_LINKLOCAL_ALLNODES_INIT                 { 0xFF,2,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }
+    #define  IN6ADDR_LINKLOCAL_ALLNODES_INIT                 {{ 0xFF,2,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }}
 
     #ifdef   IN6ADDR_LINKLOCAL_ALLROUTERS_INIT
     #undef   IN6ADDR_LINKLOCAL_ALLROUTERS_INIT
     #endif
-    #define  IN6ADDR_LINKLOCAL_ALLROUTERS_INIT               { 0xFF,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2 }
+    #define  IN6ADDR_LINKLOCAL_ALLROUTERS_INIT               {{ 0xFF,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2 }}
 
     #define  INET6_ADDRSTRLEN                                46
 

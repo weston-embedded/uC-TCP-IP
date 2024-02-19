@@ -1923,7 +1923,7 @@ NET_ICMPv6_REQ_ID_SEQ  NetICMPv6_TxMsgReqHandler (NET_IF_NBR         if_nbr,
            NET_BUF                   *p_msg_req_head;
            NET_BUF                   *p_chain_buf;
            NET_BUF                   *p_chain_buf_next;
-           NET_BUF_HDR               *p_msg_req_hdr;
+           NET_BUF_HDR               *p_msg_req_hdr = (void *)0;
            NET_BUF_HDR               *p_chain_buf_hdr;
            NET_ICMPv6_HDR_ECHO       *p_icmp_hdr_echo;
            NET_NDP_NEIGHBOR_SOL_HDR  *p_icmp_hdr_neighbor_sol;
@@ -2672,7 +2672,7 @@ static  void  NetICMPv6_RxPktValidate (NET_BUF         *p_buf,
     CPU_INT16U                  icmp_msg_len_min;
     CPU_INT16U                  icmp_msg_len_max;
     CPU_INT16U                  icmp_msg_len;
-    NET_ICMPv6_HDR_PARAM_PROB  *p_icmp_param_prob;
+    NET_ICMPv6_HDR_PARAM_PROB  *p_icmp_param_prob = (void *)0;
     NET_BUF                    *p_buf_next;
     NET_BUF_HDR                *p_buf_next_hdr;
     NET_IPv6_PSEUDO_HDR         ipv6_pseudo_hdr;

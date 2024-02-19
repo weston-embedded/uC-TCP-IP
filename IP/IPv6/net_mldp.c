@@ -552,7 +552,7 @@ CPU_BOOLEAN  NetMLDP_HostGrpLeave (NET_IF_NBR      if_nbr,
                                    NET_IPv6_ADDR  *p_addr,
                                    NET_ERR        *p_err)
 {
-    CPU_BOOLEAN  host_grp_leave;
+    CPU_BOOLEAN  host_grp_leave = DEF_FAIL;
 
 
                                                                 /* Acquire net lock (see Note #1b).                     */

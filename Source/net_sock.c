@@ -6227,7 +6227,7 @@ NET_SOCK_RTN_CODE  NetSock_Sel (NET_SOCK_QTY       sock_nbr_max,
     LIB_ERR             lib_err;
     KAL_ERR             err_kal;
     KAL_ERR             err_kal_del;
-    NET_ERR             err;
+    NET_ERR             err = 0;
 
 
 
@@ -16606,7 +16606,7 @@ static  NET_SOCK_RTN_CODE  NetSock_RxDataHandler (NET_SOCK_ID          sock_id,
     CPU_BOOLEAN         secure;
 #endif
     NET_SOCK           *p_sock;
-    NET_SOCK_RTN_CODE   rtn_code;
+    NET_SOCK_RTN_CODE   rtn_code = 0;
 
 
 
@@ -17900,7 +17900,7 @@ static  NET_SOCK_RTN_CODE  NetSock_TxDataHandler (NET_SOCK_ID          sock_id,
    CPU_BOOLEAN         secure;
 #endif
    NET_SOCK           *p_sock;
-   NET_SOCK_RTN_CODE   rtn_code;
+   NET_SOCK_RTN_CODE   rtn_code = 0;
 
 
 
